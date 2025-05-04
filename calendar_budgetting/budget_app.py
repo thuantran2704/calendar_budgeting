@@ -96,13 +96,14 @@ class BudgetApp:
                 row += 1
 
     def add_entry(self, date):
-        title = simpledialog.askstring("Title", "Enter title:")
+        # FIXED: All dialogs now properly reference parent window
+        title = simpledialog.askstring("Title", "Enter title:", parent=self.root)
         if not title:
             return
-        amount = simpledialog.askfloat("Amount", "Enter amount:")
+        amount = simpledialog.askfloat("Amount", "Enter amount:", parent=self.root)
         if amount is None:
             return
-        description = simpledialog.askstring("Description", "Enter description:")
+        description = simpledialog.askstring("Description", "Enter description:", parent=self.root)
 
         cursor.execute("INSERT INTO budget (date, title, amount, description) VALUES (?, ?, ?, ?)",
                        (date, title, amount, description))
@@ -119,11 +120,11 @@ class BudgetApp:
         popup.title("Edit Budget Entry")
         popup.geometry("300x250")
 
-        # Fixed popup focus handling
-        popup.transient(self.root)  # Set as child window
-        popup.grab_set()            # Make modal
-        popup.focus_force()         # Force focus
-        popup.lift()                # Bring to front
+        # Proper modal behavior
+        popup.transient(self.root)
+        popup.grab_set()
+        popup.focus_force()
+        popup.lift()
 
         # --- UI content ---
         tk.Label(popup, text="Title").pack(pady=5)
@@ -153,7 +154,7 @@ class BudgetApp:
             self.load_ui()
 
         def delete_entry():
-            if messagebox.askyesno("Delete", "Are you sure you want to delete this entry?"):
+            if messagebox.askyesno("Delete", "Are you sure you want to delete this entry?", parent=popup):
                 cursor.execute("DELETE FROM budget WHERE id=?", (entry_id,))
                 conn.commit()
                 popup.destroy()
