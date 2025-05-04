@@ -3,6 +3,7 @@ from tkinter import simpledialog, messagebox
 import calendar
 from datetime import datetime
 import sqlite3
+import random
 
 # === Database Setup ===
 conn = sqlite3.connect("budget.db")
@@ -25,21 +26,24 @@ class BudgetApp:
         self.root.title("Budget Calendar")
         self.current_year = datetime.now().year
         self.current_month = datetime.now().month
-        self.month_colors = {
-            1: "#FFDDEE",  # Soft Pink
-            2: "#D0F0C0",  # Tea Green
-            3: "#FFFACD",  # LemonChiffon
-            4: "#E6E6FA",  # Lavender
-            5: "#F0FFF0",  # Honeydew
-            6: "#E0FFFF",  # LightCyan
-            7: "#FFEFD5",  # PapayaWhip
-            8: "#FFF0F5",  # LavenderBlush
-            9: "#F5F5DC",  # Beige
-            10: "#FDF5E6", # OldLace
-            11: "#FAFAD2", # LightGoldenrodYellow
-            12: "#F0F8FF"  # AliceBlue
-        }
+
+        self.window_bg = "#ffffff"
+        self.cell_bg = "#f0f0f0"
+        self.generate_month_colors()
+
         self.load_ui()
+
+    def get_random_pastel_color(self):
+        base = 200
+        return "#%02X%02X%02X" % (
+            random.randint(base, 255),
+            random.randint(base, 255),
+            random.randint(base, 255)
+        )
+
+    def generate_month_colors(self):
+        self.window_bg = self.get_random_pastel_color()
+        self.cell_bg = self.get_random_pastel_color()
 
     def get_entries(self, date):
         cursor.execute("SELECT * FROM budget WHERE date=?", (date,))
@@ -56,8 +60,8 @@ class BudgetApp:
         for widget in self.root.winfo_children():
             widget.destroy()
 
-        month_bg = self.month_colors.get(self.current_month, "#F0F0F0")
-        self.root.configure(bg=month_bg)
+        self.generate_month_colors()
+        self.root.configure(bg=self.window_bg)
 
         self.root.grid_rowconfigure(2, weight=1)
         self.root.grid_columnconfigure(tuple(range(7)), weight=1)
@@ -65,20 +69,22 @@ class BudgetApp:
         # Monthly Net Summary
         net_total = self.get_month_net()
         color = "green" if net_total >= 0 else "red"
-        tk.Label(self.root, text=f"Net Total: ${net_total:.2f}", font=("Arial", 14, "bold"), fg=color, bg=month_bg)\
+        tk.Label(self.root, text=f"Net Total: ${net_total:.2f}", font=("Arial", 14, "bold"),
+                 fg=color, bg=self.window_bg)\
             .grid(row=0, column=0, columnspan=7, pady=(5, 10))
 
         # Month navigation
-        tk.Button(self.root, text="<", command=self.prev_month, bg=month_bg).grid(row=1, column=0, padx=10)
-        tk.Label(self.root, text=f"{calendar.month_name[self.current_month]} {self.current_year}", 
-                 font=("Arial", 16, "bold"), bg=month_bg).grid(row=1, column=1, columnspan=5)
-        tk.Button(self.root, text=">", command=self.next_month, bg=month_bg).grid(row=1, column=6, padx=10)
+        tk.Button(self.root, text="<", command=self.prev_month, bg=self.window_bg).grid(row=1, column=0, padx=10)
+        tk.Label(self.root, text=f"{calendar.month_name[self.current_month]} {self.current_year}",
+                 font=("Arial", 16, "bold"), bg=self.window_bg).grid(row=1, column=1, columnspan=5)
+        tk.Button(self.root, text=">", command=self.next_month, bg=self.window_bg).grid(row=1, column=6, padx=10)
 
         # Day labels
         days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
         for idx, day in enumerate(days):
             fg = "#007BFF" if day in ["Sat", "Sun"] else "black"
-            tk.Label(self.root, text=day, font=("Arial", 10, "bold"), fg=fg, bg=month_bg).grid(row=2, column=idx, pady=2)
+            tk.Label(self.root, text=day, font=("Arial", 10, "bold"), fg=fg, bg=self.window_bg)\
+                .grid(row=2, column=idx, pady=2)
 
         # Day cells
         cal = calendar.Calendar(firstweekday=0)
@@ -88,11 +94,11 @@ class BudgetApp:
 
         for day in month_days:
             if day == 0:
-                tk.Label(self.root, text="", bg=month_bg).grid(row=row, column=col)
+                tk.Label(self.root, text="", bg=self.window_bg).grid(row=row, column=col)
             else:
                 date_str = f"{self.current_year}-{self.current_month:02d}-{day:02d}"
                 day_date = datetime.strptime(date_str, "%Y-%m-%d").date()
-                bg = "#FFDDDD" if day_date == today else month_bg
+                bg = "#FFDDDD" if day_date == today else self.cell_bg
 
                 frame = tk.Frame(self.root, bg=bg, borderwidth=1, relief="solid")
                 frame.grid(row=row, column=col, sticky="nsew", padx=1, pady=1)
