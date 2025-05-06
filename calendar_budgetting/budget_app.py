@@ -6,8 +6,11 @@ import sqlite3
 import random
 
 # === Database Setup ===
-conn = sqlite3.connect("budget.db")
+import os
+db_path = os.path.join(os.path.dirname(__file__), "budget.db")
+conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
+
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS budget (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -121,17 +124,26 @@ class BudgetApp:
 
     def add_entry(self, date):
         title = simpledialog.askstring("Title", "Enter title:", parent=self.root)
-        if not title:
+        if title is None:
             return
+        title = title.strip()
+        if not title:
+            messagebox.showwarning("Invalid", "Title cannot be empty.")
+            return
+
         amount = simpledialog.askfloat("Amount", "Enter amount:", parent=self.root)
         if amount is None:
             return
+
         description = simpledialog.askstring("Description", "Enter description:", parent=self.root)
+        if description is None:
+            description = ""  # Allow empty description
 
         cursor.execute("INSERT INTO budget (date, title, amount, description) VALUES (?, ?, ?, ?)",
-                       (date, title, amount, description))
+                   (date, title, amount, description))
         conn.commit()
         self.load_ui()
+
 
     def edit_entry(self, entry_id):
         cursor.execute("SELECT * FROM budget WHERE id=?", (entry_id,))
